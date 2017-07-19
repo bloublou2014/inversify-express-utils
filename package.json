@@ -8,7 +8,7 @@
   "scripts": {
     "test": "gulp",
     "publish-please": "publish-please",
-    "postinstall": "publish-please guard"
+    "postinstall": "npm run publish-please guard"
   },
   "repository": {
     "type": "git",
