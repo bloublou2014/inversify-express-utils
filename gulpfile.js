@@ -16,8 +16,8 @@ var gulp = require("gulp"),
 gulp.task("lint", function() {
 
     var config = {
-        fornatter: "verbose",
-        emitError: (process.env.CI) ? true : false
+        formatter: "verbose",
+        emitError: !!(process.env.CI)
     };
 
     return gulp.src([
@@ -40,7 +40,7 @@ gulp.task("build-lib", function() {
             "src/**/*.ts"
         ])
         .pipe(tsLibProject())
-        .on("error", function(err) {
+        .on("error", function() {
             process.exit(1);
         })
         .js.pipe(gulp.dest("lib/"));
@@ -55,7 +55,7 @@ gulp.task("build-es", function() {
             "src/**/*.ts"
         ])
         .pipe(tsEsProject())
-        .on("error", function(err) {
+        .on("error", function() {
             process.exit(1);
         })
         .js.pipe(gulp.dest("es/"));
@@ -71,7 +71,7 @@ gulp.task("build-dts", function() {
             "src/**/*.ts"
         ])
         .pipe(tsDtsProject())
-        .on("error", function(err) {
+        .on("error", function() {
             process.exit(1);
         })
         .dts.pipe(gulp.dest("dts"));
@@ -88,7 +88,7 @@ gulp.task("build-src", function() {
             "src/**/*.ts"
         ])
         .pipe(tstProject())
-        .on("error", function(err) {
+        .on("error", function() {
             process.exit(1);
         })
         .js.pipe(gulp.dest("src/"));
@@ -101,7 +101,7 @@ gulp.task("build-test", function() {
             "test/**/*.ts"
         ])
         .pipe(tsTestProject())
-        .on("error", function(err) {
+        .on("error", function() {
             process.exit(1);
         })
         .js.pipe(gulp.dest("./test/"));

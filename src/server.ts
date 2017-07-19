@@ -1,31 +1,32 @@
 import * as express from "express";
 import * as inversify from "inversify";
-import { interfaces } from "./interfaces";
-import { TYPE, METADATA_KEY, DEFAULT_ROUTING_ROOT_PATH, PARAMETER_TYPE } from "./constants";
+import {interfaces} from "./interfaces";
+import {TYPE, METADATA_KEY, DEFAULT_ROUTING_ROOT_PATH, PARAMETER_TYPE} from "./constants";
 
 /**
  * Wrapper for the express server.
  */
-export class InversifyExpressServer  {
+export class InversifyExpressServer {
 
-    private _router: express.Router;
-    private _container: inversify.interfaces.Container;
-    private _app: express.Application;
-    private _configFn: interfaces.ConfigFunction;
-    private _errorConfigFn: interfaces.ConfigFunction;
-    private _routingConfig: interfaces.RoutingConfig;
+    protected _router: express.Router;
+    protected _container: inversify.interfaces.Container;
+    protected _app: express.Application;
+    protected _configFn: interfaces.ConfigFunction;
+    protected _errorConfigFn: interfaces.ConfigFunction;
+    protected _routingConfig: interfaces.RoutingConfig;
 
     /**
      * Wrapper for the express server.
      *
      * @param container Container loaded with all controllers and their dependencies.
+     * @param customRouter Custom Express Router
+     * @param routingConfig Routing Configuration
+     * @param customApp Custom Express Application
      */
-    constructor(
-        container: inversify.interfaces.Container,
-        customRouter?: express.Router,
-        routingConfig?: interfaces.RoutingConfig,
-        customApp?: express.Application
-    ) {
+    constructor(container: inversify.interfaces.Container,
+                customRouter?: express.Router,
+                routingConfig?: interfaces.RoutingConfig,
+                customApp?: express.Application) {
         this._container = container;
         this._router = customRouter || express.Router();
         this._routingConfig = routingConfig || {
@@ -79,7 +80,7 @@ export class InversifyExpressServer  {
         return this._app;
     }
 
-    private registerControllers() {
+    protected registerControllers() {
 
         let controllers: interfaces.Controller[] = this._container.getAll<interfaces.Controller>(TYPE.Controller);
 
@@ -101,7 +102,6 @@ export class InversifyExpressServer  {
             );
 
             if (controllerMetadata && methodMetadata) {
-                let router: express.Router = express.Router();
                 let controllerMiddleware = this.resolveMidleware(...controllerMetadata.middleware);
 
                 methodMetadata.forEach((metadata: interfaces.ControllerMethodMetadata) => {
@@ -124,7 +124,7 @@ export class InversifyExpressServer  {
         this._app.use(this._routingConfig.rootPath, this._router);
     }
 
-    private resolveMidleware(...middleware: interfaces.Middleware[]): express.RequestHandler[] {
+    protected resolveMidleware(...middleware: interfaces.Middleware[]): express.RequestHandler[] {
         return middleware.map(middlewareItem => {
             try {
                 return this._container.get<express.RequestHandler>(middlewareItem);
@@ -134,7 +134,7 @@ export class InversifyExpressServer  {
         });
     }
 
-    private handlerFactory(controllerName: any, key: string, parameterMetadata: interfaces.ParameterMetadata[]): express.RequestHandler {
+    protected handlerFactory(controllerName: any, key: string, parameterMetadata: interfaces.ParameterMetadata[]): express.RequestHandler {
         return (req: express.Request, res: express.Response, next: express.NextFunction) => {
             let args = this.extractParameters(req, res, next, parameterMetadata);
             let result: any = this._container.getNamed(TYPE.Controller, controllerName)[key](...args);
@@ -146,9 +146,9 @@ export class InversifyExpressServer  {
                         res.send(value);
                     }
                 })
-                .catch((error: any) => {
-                   next(error);
-                });
+                    .catch((error: any) => {
+                        next(error);
+                    });
 
             } else if (result && !res.headersSent) {
                 res.send(result);
@@ -156,8 +156,8 @@ export class InversifyExpressServer  {
         };
     }
 
-    private extractParameters(req: express.Request, res: express.Response, next: express.NextFunction,
-        params: interfaces.ParameterMetadata[]): any[] {
+    protected extractParameters(req: express.Request, res: express.Response, next: express.NextFunction,
+                                params: interfaces.ParameterMetadata[]): any[] {
         let args = [];
         if (!params || !params.length) {
             return [req, res, next];
@@ -165,14 +165,30 @@ export class InversifyExpressServer  {
         for (let item of params) {
 
             switch (item.type) {
-                default: args[item.index] = res; break; // response
-                case PARAMETER_TYPE.REQUEST: args[item.index] = this.getParam(req, null, item.parameterName); break;
-                case PARAMETER_TYPE.NEXT: args[item.index] = next; break;
-                case PARAMETER_TYPE.PARAMS: args[item.index] = this.getParam(req, "params", item.parameterName); break;
-                case PARAMETER_TYPE.QUERY: args[item.index] = this.getParam(req, "query", item.parameterName); break;
-                case PARAMETER_TYPE.BODY: args[item.index] = this.getParam(req, "body", item.parameterName); break;
-                case PARAMETER_TYPE.HEADERS: args[item.index] = this.getParam(req, "headers", item.parameterName); break;
-                case PARAMETER_TYPE.COOKIES: args[item.index] = this.getParam(req, "cookies", item.parameterName); break;
+                default:
+                    args[item.index] = res;
+                    break; // response
+                case PARAMETER_TYPE.REQUEST:
+                    args[item.index] = this.getParam(req, null, item.parameterName);
+                    break;
+                case PARAMETER_TYPE.NEXT:
+                    args[item.index] = next;
+                    break;
+                case PARAMETER_TYPE.PARAMS:
+                    args[item.index] = this.getParam(req, "params", item.parameterName);
+                    break;
+                case PARAMETER_TYPE.QUERY:
+                    args[item.index] = this.getParam(req, "query", item.parameterName);
+                    break;
+                case PARAMETER_TYPE.BODY:
+                    args[item.index] = this.getParam(req, "body", item.parameterName);
+                    break;
+                case PARAMETER_TYPE.HEADERS:
+                    args[item.index] = this.getParam(req, "headers", item.parameterName);
+                    break;
+                case PARAMETER_TYPE.COOKIES:
+                    args[item.index] = this.getParam(req, "cookies", item.parameterName);
+                    break;
             }
 
         }
@@ -180,16 +196,17 @@ export class InversifyExpressServer  {
         return args;
     }
 
-    private getParam(source: any, paramType: string, name: string) {
+    protected getParam(source: any, paramType: string, name: string) {
         let param = source[paramType] || source;
         return param[name] || this.checkQueryParam(paramType, param);
     }
 
-    private checkQueryParam(paramType: string, param: any) {
+    protected checkQueryParam(paramType: string, param: any) {
         if (paramType === "query") {
             return undefined;
         } else {
             return param;
         }
     }
+
 }

@@ -32,8 +32,11 @@ node_modules
 # Optional REPL history
 .node_repl_history
 
+# webstorm
+.idea
+
+
 build
-node_modules
 bower_components
 docs
 bundled

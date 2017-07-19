@@ -7,6 +7,7 @@ import * as express from "express";
 import { InversifyExpressServer } from "../src/server";
 import { Container, injectable } from "inversify";
 import { TYPE } from "../src/constants";
+import "reflect-metadata";
 
 describe("Unit Test: InversifyExpressServer", () => {
 

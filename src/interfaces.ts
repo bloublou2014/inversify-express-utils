@@ -1,6 +1,6 @@
 import * as express from "express";
-import { interfaces as inversifyInterfaces } from "inversify";
-import { PARAMETER_TYPE } from "./constants";
+import {interfaces as inversifyInterfaces} from "inversify";
+import {PARAMETER_TYPE} from "./constants";
 
 namespace interfaces {
 
@@ -27,7 +27,8 @@ namespace interfaces {
         type: PARAMETER_TYPE;
     }
 
-    export interface Controller {}
+    export interface Controller {
+    }
 
     export interface HandlerDecorator {
         (target: any, key: string, value: any): void;
@@ -43,4 +44,4 @@ namespace interfaces {
 
 }
 
-export { interfaces };
+export {interfaces};
