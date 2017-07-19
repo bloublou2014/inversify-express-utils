@@ -7,7 +7,7 @@
   "typings": "./dts/index.d.ts",
   "scripts": {
     "test": "gulp",
-    "publish-please": "publish-please",
+    "publish-please": "node ./node_modules/publish-please/bin/publish-please",
     "postinstall": "npm run publish-please guard"
   },
   "repository": {
